@@ -1,0 +1,106 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Plugin host smoke test</title>
+<link rel="stylesheet" href="/dist/styles.css">
+<style>
+html,body { margin:0;height:100%;font-family:system-ui; }
+body { display:flex; --background-primary:#fff; --background-secondary:#f7f8fa; --text-normal:#222; }
+.workspace-leaf-content { flex:1;min-width:0;height:100%;border-right:1px solid #888; }
+</style></head><body>
+<script>
+HTMLElement.prototype.empty = function() { this.replaceChildren(); };
+HTMLElement.prototype.addClass = function(name) { this.classList.add(name); };
+HTMLElement.prototype.createEl = function(tag, options={}) {
+  const el=this.ownerDocument.createElement(tag); el.textContent=options.text??""; this.appendChild(el); return el;
+};
+class Events {
+  refs=new Set();
+  on(name,callback) { const ref={name,callback}; this.refs.add(ref); return ref; }
+  offref(ref) { this.refs.delete(ref); }
+  emit(name,...args) { for(const ref of [...this.refs]) if(ref.name===name) ref.callback(...args); }
+}
+class TFile {
+  constructor(path) { this.path=path; }
+  get basename() { return this.path.split('/').at(-1).replace(/\.md$/,''); }
+  get extension() { return this.path.split('.').at(-1); }
+}
+class MarkdownView { constructor(file, value) { this.file=file;this.editor={getValue:()=>value}; } }
+class EditableFileView {
+  constructor(leaf) { this.leaf=leaf;this.app=leaf.app;this.contentEl=leaf.el.createEl('div');this.file=null; }
+  addAction() {}
+  getState() { return {file:this.file?.path}; }
+  async setState(state) {
+    if(this.file) await this.onUnloadFile(this.file);
+    this.file=files.get(state.file); await this.onLoadFile(this.file);
+  }
+  async onRename() {}
+}
+class Notice { constructor(text) { notices.push(text); } }
+class Plugin {
+  commands=[]; registrations=[]; cleanups=[];
+  constructor(app) { this.app=app; }
+  register(callback) { this.cleanups.push(callback); }
+  registerView(type,factory) {
+    factories.set(type,factory);
+    this.register(()=>{ factories.delete(type); for(const leaf of leaves.filter(leaf=>leaf.type===type)) leaf.detach(); });
+  }
+  addCommand(command) { this.commands.push(command); }
+  addRibbonIcon(icon,title,callback) {
+    const button=document.body.createEl('button'); button.hidden=true; button.setAttribute('aria-label',title);
+    button.addEventListener('click',callback); this.register(()=>button.remove()); return button;
+  }
+  registerEvent(ref) { this.registrations.push(ref); this.register(()=>workspace.offref(ref)); }
+  unload() { while(this.cleanups.length) this.cleanups.pop()(); this.onunload(); }
+}
+const files=new Map(['alpha.md','beta.md'].map(path=>[path,new TFile(path)]));
+const texts=new Map([
+  ['alpha.md','---\ncolors:\n  todo: "#ff0000"\n---\n# Alpha\n- [ ] Alpha task ⏳ 2026-11-01 📅 2026-11-12 ^a'],
+  ['beta.md','---\ncolors:\n  todo: "#0000ff"\n---\n# Beta\n- [ ] Beta task ⏳ 2026-11-01 📅 2026-11-12 ^a'],
+]);
+const vault=new Events(),metadataCache=new Events(),workspace=new Events();
+const leaves=[],markdown=[],notices=[],factories=new Map();
+Object.assign(vault,{
+  getAbstractFileByPath:path=>files.get(path),
+  read:async file=>texts.get(file.path),
+  process:async (file,update)=>{
+    const fresh=texts.get(file.path),next=update(fresh);
+    if(next!==fresh) { texts.set(file.path,next); queueMicrotask(()=>vault.emit('modify',file)); }
+    return next;
+  },
+});
+Object.assign(metadataCache,{getFirstLinkpathDest:name=>files.get(name.endsWith('.md')?name:name+'.md')});
+Object.assign(workspace,{
+  getLeavesOfType:type=>[...(type==='markdown'?markdown:[]),...leaves.filter(leaf=>leaf.type===type)],
+  iterateAllLeaves:callback=>leaves.filter(leaf=>leaf.type).forEach(callback),
+  requestSaveLayout:()=>{},revealLeaf:async()=>{},getActiveFile:()=>files.get('alpha.md'),
+  getLeaf:()=>{
+    const leaf={app,el:document.body.createEl('div'),type:null,view:null};
+    leaf.el.className='workspace-leaf-content';
+    leaf.setViewState=async state=>{
+      if(leaf.view?.onClose) await leaf.view.onClose();
+      leaf.el.empty();leaf.type=state.type;
+      if(factories.has(state.type)) {
+        leaf.view=factories.get(state.type)(leaf);await leaf.view.setState(state.state,{});
+      } else if(state.type==='markdown') {leaf.view=new MarkdownView(files.get(state.state.file),texts.get(state.state.file));}
+      else {leaf.view=null;leaf.el.remove();}
+    };
+    leaf.detach=()=>{void leaf.view?.onClose?.();leaf.el.remove();leaf.type=null;};
+    leaves.push(leaf);return leaf;
+  },
+});
+const app={vault,metadataCache,workspace};
+window.host={app,files,texts,leaves,markdown,notices};
+window.require=name=>{
+  if(name!=='obsidian') throw Error('Unexpected require '+name);
+  return {Plugin,EditableFileView,TFile,MarkdownView,Notice};
+};
+window.module={exports:{}};
+</script>
+<script>
+window.bundleReady=fetch('/dist/main.js').then(response=>response.text()).then(code=>new Function('require','module',code)(window.require,window.module));
+window.start=async()=>{
+  await window.bundleReady;
+  const plugin=new module.exports(app);await plugin.onload();window.host.plugin=plugin;
+  await plugin.open(files.get('alpha.md'),true);
+  await plugin.open(files.get('beta.md'),true);
+  return true;
+};
+</script></body></html>

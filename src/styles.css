@@ -1,0 +1,27 @@
+.workspace-leaf-content .project-gantt-view { padding: 0; overflow: hidden; height: 100%; }
+.project-gantt-view .pp-scope {
+  --pp-bg: var(--background-primary);
+  --pp-panel: var(--background-secondary);
+  --pp-text: var(--text-normal);
+}
+.project-gantt-view .pp-dialog input,
+.project-gantt-view .pp-dialog textarea,
+.project-gantt-view .pp-toolbar select { background: var(--background-primary); }
+.project-gantt-view .pp-toolbar { gap: 4px; }
+.project-gantt-view .pp-toolbar button { box-shadow: none; height: auto; }
+.project-gantt-view .pp-scope .wx-willow-theme {
+  --wx-background: var(--background-primary);
+  --wx-background-alt: var(--background-secondary);
+  --wx-background-hover: var(--background-modifier-hover, #eaedf5);
+  --wx-color-font: var(--text-normal);
+  --wx-color-font-alt: var(--text-muted, #9fa1ae);
+  --wx-border-color: var(--background-modifier-border, #e6e6e6);
+  --wx-gantt-border-color: var(--background-modifier-border, #e6e6e6);
+  --wx-gantt-border: 1px solid var(--background-modifier-border, #e6e6e6);
+  --wx-table-border: 1px solid var(--background-modifier-border, #e6e6e6);
+  --wx-table-header-background: var(--background-secondary);
+  --wx-gantt-select-color: var(--background-modifier-hover, #eaedf5);
+}
+.project-gantt-view .pp-scope .pp-toolbar button:hover { background: var(--background-modifier-hover, #eaedf5); }
+.project-gantt-view .pp-scope .pp-raw,
+.project-gantt-view .pp-scope .pp-stage-list li { background: var(--background-secondary); color: var(--text-normal); }
