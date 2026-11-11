@@ -26,7 +26,25 @@ Edit dates, status, stages, progress, and Markdown notes in the task dialog:
 
 Obsidian handles file navigation. The plugin has no separate file picker or recent-files list. HTML export is currently available in the separate desktop application, not in this plugin.
 
-## Compatibility
+## Dependencies
+
+| Dependency | Requirement | Purpose |
+| --- | --- | --- |
+| Obsidian desktop | Required host application | Provides the workspace, vault access, Markdown views, and plugin settings. Minimum API version: 1.8.7; tested with Obsidian 1.15.0. |
+| [Obsidian Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) | **Optional companion plugin** | Project Gantt's task syntax is based on the Tasks emoji metadata format, including scheduled, start, due, and completion dates. Installing Tasks is optional: Project Gantt parses and edits Markdown itself and does not call the Tasks plugin API. |
+| `@project-planner/core` | Required; bundled into the plugin | Shared Markdown parser, editing operations, document store, localization, and Gantt editor. Built from the sibling core repository. |
+| Svelte 5 | Required; bundled | Component framework for the editor, dialogs, and reactive interface. |
+| SVAR Gantt and SVAR Core | Required; bundled through the core | Chart rendering, dependency visualization, calendar widgets, and widget localization. |
+| CodeMirror 6 and Lezer | Required; bundled through the core | Markdown editing and syntax highlighting in task and group notes. |
+| `yaml` | Required; bundled through the core | Reads and updates project settings in YAML frontmatter. |
+| Node.js, npm, TypeScript, and Vite | Development/build only | Install dependencies, check types, and compile the plugin. Not required for users installing a built release. |
+| Vitest and svelte-check | Development only | Run unit tests and validate Svelte/TypeScript code. |
+
+Bundled libraries do not need to be installed separately in Obsidian. Exact versions are recorded in this repository's and the core repository's `package.json` and lockfiles.
+
+**Task format compatibility:** Project Gantt supports a subset of Tasks-style metadata and adds its own conventions, such as `🚴` progress, `#milestone`, stage tags, and dependencies based on Obsidian block IDs. This does not imply support for every Tasks feature or identical dependency syntax. See the [Tasks date-format documentation](https://github.com/obsidian-tasks-group/obsidian-tasks/blob/main/docs/Getting%20Started/Dates.md) for the original date markers.
+
+## Supported environment
 
 This is a **desktop-only** plugin. Version 2.0.2 has been tested on Windows with Obsidian 1.15.0. The minimum supported API version is 1.8.7, required for Obsidian's language API; that older application version has not been verified.
 
