@@ -57,7 +57,7 @@ try {
   }
   if (!ready) throw Error("The isolated Obsidian instance did not load in 30 seconds");
   exitCode = await new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, ["scripts/test-real-obsidian.mjs"], { stdio: "inherit", windowsHide: true });
+    const child = spawn(process.execPath, [process.argv.includes("--screenshots") ? "scripts/capture-screenshots.mjs" : "scripts/test-real-obsidian.mjs"], { stdio: "inherit", windowsHide: true });
     child.on("error", reject); child.on("exit", code => resolve(code ?? 1));
   });
 } finally {

@@ -4,6 +4,16 @@ Edit Markdown project plans as interactive Gantt charts inside Obsidian. Chart c
 
 Created by **bvn13**, using Svelte 5, SVAR Gantt, and the shared [Project Gantt core](https://gitea.bvn13.me/management/project-planner-core).
 
+## Screenshots
+
+The bundled development-plan demo running in Obsidian. The interface is set to English; task names remain in the original Russian Markdown.
+
+![Project Gantt in Obsidian showing the development plan, task groups, dependencies, and progress](docs/images/project-gantt-overview.png)
+
+Edit dates, status, stages, progress, and Markdown notes in the task dialog:
+
+![Project Gantt task editor with dates, status tags, stages, progress, and Markdown notes](docs/images/project-gantt-task-editor.png)
+
 ## Features
 
 - Edit task dates, progress, dependencies, and task details.
@@ -104,6 +114,8 @@ Build definitions: [package.json](package.json) and [vite.config.ts](vite.config
 
 ## Verification
 
+To regenerate these screenshots on Windows using an isolated Obsidian profile, run `node scripts/smoke-obsidian.mjs --screenshots` after building the plugin. This runs the integration checks, captures the demo chart and task dialog, and updates the image files in this repository and the sibling core repository.
+
 ```sh
 npm test
 npm run smoke
@@ -126,4 +138,4 @@ Personal and commercial use, modification, and free redistribution are permitted
 
 This is a source-available project with restrictions on paid distribution, not an OSI-approved open-source license. The full license text governs.
 
-<!-- docs-source: repository=https://gitea.bvn13.me/management/obsidian-project-planner-plugin.git; branch=feature/project-gantt; commit=54bb180fc5feea5f95847bface1c9c145d6a4ac5; tag=; path=README.md; dirty=true -->
+<!-- docs-source: repository=https://gitea.bvn13.me/management/obsidian-project-planner-plugin.git; branch=feature/project-gantt; commit=96db96ff47acd94965f975c1a4cd7f1551c0c86b; tag=; path=README.md; dirty=true -->
