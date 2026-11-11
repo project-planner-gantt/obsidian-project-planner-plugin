@@ -1,8 +1,8 @@
 {
   "id": "project-gantt",
   "name": "Project Gantt",
-  "version": "2.0.1",
-  "minAppVersion": "1.6.0",
+  "version": "2.0.2",
+  "minAppVersion": "1.8.7",
   "description": "Edit Markdown project plans as an interactive Gantt chart.",
   "author": "bvn13",
   "isDesktopOnly": true

@@ -37,6 +37,7 @@ try {
   });
   await evaluate(async () => {
     await app.plugins.enablePluginAndSave('project-gantt');
+    await app.plugins.plugins['project-gantt'].setLanguage('en');
     // Close earlier views in this test vault only, so runs can be inspected again.
     for (const leaf of app.workspace.getLeavesOfType('project-gantt-view')) leaf.detach();
     const source = '# Integration\n\n## Work\n\n- [ ] First ⏳ 2026-11-11 📅 2026-11-15 ^a\n- [ ] Second ⏳ 2026-11-16 📅 2026-11-18 ^b\n';
@@ -50,7 +51,7 @@ try {
   });
   check('current-file command is global and available to quick-command pickers', await evaluate(() => {
     const command = app.commands.commands['project-gantt:open-planner'];
-    return typeof command?.callback === 'function' && !command.checkCallback && command.icon === 'chart-gantt' && command.name.includes('Открыть текущий файл в Гантте');
+    return typeof command?.callback === 'function' && !command.checkCallback && command.icon === 'chart-gantt' && command.name.includes('Open current file as Gantt');
   }));
   await waitFor(() => app.workspace.getLeavesOfType('project-gantt-view').some(leaf => leaf.view.store?.state?.path === plannerTest.file.path && leaf.view.contentEl.querySelector('.wx-row[data-id=":a"]')), 'initial Gantt');
   await evaluate(() => {
@@ -60,23 +61,25 @@ try {
   check('actual plugin loads beside Markdown', await evaluate(() => !!plannerTest.markdown && !!plannerTest.leaf.view.contentEl.querySelector('.wx-bar')));
   check('vault and profile are isolated', (await evaluate(() => app.vault.adapter.getBasePath())).toLowerCase() === run.vault.toLowerCase(), run.vault);
   check('plugin has no file-opening controls', await evaluate(() => !plannerTest.leaf.view.contentEl.querySelector('.pp-recent,.pp-export')));
-  check('left ribbon contains the current-file Gantt button', await evaluate(() => !!document.querySelector('.side-dock-ribbon-action[aria-label="Project Gantt — открыть текущий файл в Гантте"]')));
+  check('left ribbon contains the current-file Gantt button', await evaluate(() => !!document.querySelector('.side-dock-ribbon-action[aria-label="Project Gantt"]')));
   await evaluate(() => {
     app.workspace.setActiveLeaf(plannerTest.markdown, { focus: true });
-    document.querySelector('.side-dock-ribbon-action[aria-label="Project Gantt — открыть текущий файл в Гантте"]').click();
+    document.querySelector('.side-dock-ribbon-action[aria-label="Project Gantt"]').click();
   });
   await waitFor(() => plannerTest.markdown.view.getViewType() === 'project-gantt-view' && !!plannerTest.markdown.view.store?.state, 'ribbon opens current file');
   check('left ribbon button opens the current Markdown file in Gantt', true);
-  await evaluate(() => plannerTest.markdown.view.containerEl.querySelector('.view-action[aria-label="Открыть Markdown"]').click());
+  await evaluate(() => plannerTest.markdown.view.containerEl.querySelector('.project-gantt-markdown-action').click());
   await waitFor(() => plannerTest.markdown.view.getViewType() === 'markdown' && !!plannerTest.markdown.view.editor, 'return from ribbon-opened Gantt');
   await evaluate(() => {
     app.workspace.setActiveLeaf(plannerTest.markdown, { focus: true });
-    app.commands.executeCommandById('project-gantt:open-planner');
+    plannerTest.markdown.view.editor.focus();
   });
+  await waitFor(() => app.workspace.getActiveFile()?.path === plannerTest.file.path && app.workspace.activeLeaf === plannerTest.markdown, 'active Markdown before command');
+  await evaluate(() => app.commands.executeCommandById('project-gantt:open-planner'));
   await waitFor(() => plannerTest.markdown.view.getViewType() === 'project-gantt-view' && !!plannerTest.markdown.view.store?.state, 'replace Markdown with Gantt');
   check('command switches the current Markdown tab to Gantt', true);
   await evaluate(() => {
-    const action = plannerTest.markdown.view.containerEl.querySelector('.view-action[aria-label="Открыть Markdown"]');
+    const action = plannerTest.markdown.view.containerEl.querySelector('.project-gantt-markdown-action');
     if (!action) throw Error('Return to Markdown action not found');
     action.click();
   });
@@ -190,6 +193,32 @@ try {
   check('disabled plugin releases its document store', await evaluate(() => plannerBeforeDisable.store === null));
   await evaluate(async () => app.plugins.enablePluginAndSave('project-gantt'));
   check('plugin can be enabled again', await evaluate(() => !!app.plugins.plugins['project-gantt']));
+  await evaluate(async () => {
+    const plugin = app.plugins.plugins['project-gantt'];
+    await plugin.open(app.vault.getAbstractFileByPath('demo-project.md'), true);
+    window.languageSource = await app.vault.read(app.vault.getAbstractFileByPath('demo-project.md'));
+    await plugin.setLanguage('ru');
+  });
+  await waitFor(() => [...document.querySelectorAll('.pp-toolbar button')].some(b => b.textContent === 'Сегодня'), 'Russian chart');
+  check('Russian preference translates chart and commands', await evaluate(() => app.commands.commands['project-gantt:open-planner'].name.includes('Открыть текущий файл')));
+  await evaluate(async () => {
+    await app.setting.open();
+    await app.setting.openTabById('project-gantt');
+  });
+  await waitFor(() => !!app.plugins.plugins['project-gantt'].settingsTab.containerEl.querySelector('.project-gantt-language'), 'plugin language settings');
+  await evaluate(() => {
+    const select = app.plugins.plugins['project-gantt'].settingsTab.containerEl.querySelector('.project-gantt-language');
+    if (!select) throw Error('Language setting dropdown not found');
+    select.value = 'en'; select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await waitFor(() => [...document.querySelectorAll('.pp-toolbar button')].some(b => b.textContent === 'Today'), 'English chart');
+  await evaluate(() => app.setting.close());
+  check('switching languages does not change project Markdown', await evaluate(async () => languageSource === await app.vault.read(app.vault.getAbstractFileByPath('demo-project.md'))));
+  await evaluate(async () => {
+    await app.plugins.disablePluginAndSave('project-gantt');
+    await app.plugins.enablePluginAndSave('project-gantt');
+  });
+  check('language preference persists across plugin reload', await evaluate(() => app.plugins.plugins['project-gantt'].preference === 'en'));
 } catch (error) {
   console.error(error); results.push({ name: 'unexpected error', passed: false, detail: String(error) }); failed++;
 } finally {

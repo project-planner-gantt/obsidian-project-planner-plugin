@@ -1,10 +1,11 @@
-import { EditableFileView, Notice, type TFile, type WorkspaceLeaf, type ViewStateResult } from "obsidian";
+import { EditableFileView, Notice, setTooltip, type TFile, type WorkspaceLeaf, type ViewStateResult } from "obsidian";
 import { mount, unmount } from "svelte";
 import Planner from "@project-planner/core/ui";
 import { ProjectStore } from "@project-planner/core/core/store";
 import { DEFAULT_SETTINGS } from "@project-planner/core/core/types";
 import type { GridLayout } from "@project-planner/core/ui/ganttConfig";
 import { ObsidianStorage } from "./storage";
+import { translator, type Language } from "@project-planner/core/core/i18n";
 
 export const VIEW_TYPE = "project-gantt-view";
 export class PlannerView extends EditableFileView {
@@ -12,13 +13,18 @@ export class PlannerView extends EditableFileView {
   private store: ProjectStore | null = null;
   private layout: GridLayout = { widths: {}, gridWidth: null };
   private revision = 0;
-  constructor(leaf: WorkspaceLeaf) {
+  private markdownAction: HTMLElement;
+  constructor(leaf: WorkspaceLeaf, private language: () => Language = () => "en") {
     super(leaf);
-    this.addAction("file-text", "Открыть Markdown", () => {
+    this.markdownAction = this.addAction("file-text", translator(this.language())("Open as Markdown"), () => {
       if (this.file) void this.leaf.setViewState({ type: "markdown", state: { file: this.file.path } });
     });
+    this.markdownAction.addClass("project-gantt-markdown-action");
   }
   getViewType(): string { return VIEW_TYPE; }
+  async refreshLanguage(): Promise<void> {
+    if (this.file) await this.onLoadFile(this.file);
+  }
   getDisplayText(): string { return this.file ? `${this.file.basename} · Project Gantt` : "Project Gantt"; }
   getIcon(): string { return "chart-gantt"; }
   getState(): Record<string, unknown> { return { ...super.getState(), plannerLayout: this.layout }; }
@@ -34,10 +40,11 @@ export class PlannerView extends EditableFileView {
   }
 
   async onLoadFile(file: TFile): Promise<void> {
+    setTooltip(this.markdownAction, translator(this.language())("Open as Markdown"));
     const revision = await this.dispose();
     if (revision !== this.revision) return;
     this.contentEl.addClass("project-gantt-view");
-    const store = new ProjectStore(new ObsidianStorage(this.app), DEFAULT_SETTINGS);
+    const store = new ProjectStore(new ObsidianStorage(this.app, translator(this.language())), DEFAULT_SETTINGS);
     this.store = store;
     try {
       await store.open(file.path);
@@ -45,15 +52,16 @@ export class PlannerView extends EditableFileView {
       this.component = mount(Planner, {
         target: this.contentEl,
         props: {
-          store, initialLayout: this.layout,
+          store, language: this.language(), initialLayout: this.layout,
           onlayoutchange: (layout: GridLayout) => { this.layout = layout; this.app.workspace.requestSaveLayout(); },
         },
       });
     } catch (error) {
       store.close();
       if (revision !== this.revision) return;
-      new Notice(`Не удалось открыть план: ${error}`);
-      this.contentEl.createEl("p", { text: `Не удалось открыть план: ${error}` });
+      const message = `${translator(this.language())("Failed to open project")}: ${error}`;
+      new Notice(message);
+      this.contentEl.createEl("p", { text: message });
     }
   }
   async onRename(file: TFile): Promise<void> {

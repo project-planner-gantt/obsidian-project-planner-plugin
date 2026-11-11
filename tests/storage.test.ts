@@ -61,7 +61,7 @@ describe("Obsidian storage adapter", () => {
   it("rejects reads and writes to a missing or deleted document", async () => {
     const h = host(); h.files.delete("plan.md");
     expect(await h.storage.exists("plan.md")).toBe(false);
-    await expect(h.storage.readText("plan.md")).rejects.toThrow("Файл не найден");
-    await expect(h.storage.updateText("plan.md", s => s)).rejects.toThrow("Файл не найден");
+    await expect(h.storage.readText("plan.md")).rejects.toThrow("File not found");
+    await expect(h.storage.updateText("plan.md", s => s)).rejects.toThrow("File not found");
   });
 });

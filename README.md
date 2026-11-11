@@ -18,9 +18,13 @@ Obsidian handles file navigation. The plugin has no separate file picker or rece
 
 ## Compatibility
 
-This is a **desktop-only** plugin. Version 2.0.1 has been tested on Windows with Obsidian 1.15.0. The manifest declares 1.6.0 as the minimum version; compatibility with that older version has not been verified.
+This is a **desktop-only** plugin. Version 2.0.2 has been tested on Windows with Obsidian 1.15.0. The minimum supported API version is 1.8.7, required for Obsidian's language API; that older application version has not been verified.
 
-The current interface and command labels are in Russian. This README is in English.
+## Language
+
+Open **Settings → Community plugins → Project Gantt** and choose **System**, **English**, or **Русский**. System follows Obsidian's language; unsupported languages fall back to English.
+
+The preference is saved using Obsidian's plugin data storage (`data.json` inside the plugin directory), separately from project notes. It applies to commands, plugin notices, the chart, dialogs, and calendars. Changes apply immediately to open charts and close any open task/settings dialogs, so save edits before switching. The ribbon button keeps the language-independent name **Project Gantt**.
 
 ## Manual installation
 
@@ -29,7 +33,7 @@ The current interface and command labels are in Russian. This README is in Engli
 3. Copy `main.js`, `manifest.json`, and `styles.css` from `dist/` into that folder.
 4. Reload Obsidian and enable **Project Gantt** under Community plugins.
 
-On Windows, `npm run package` creates `dist/project-gantt-2.0.1.zip`. Extract its three files into the plugin folder. Disable any earlier build using the ID `project-planner` first; the Markdown format is unchanged.
+On Windows, `npm run package` creates `dist/project-gantt-2.0.2.zip`. Extract its three files into the plugin folder. Disable any earlier build using the ID `project-planner` first; the Markdown format is unchanged.
 
 ## Open a project
 
@@ -37,12 +41,12 @@ Open a Markdown project note, then select a command:
 
 | Action | Current interface label | Command ID |
 | --- | --- | --- |
-| Open in the current tab | Открыть текущий файл в Гантте | `project-gantt:open-planner` |
-| Open beside the note | Открыть Project Gantt рядом с заметкой | `project-gantt:open-planner-beside` |
+| Open in the current tab | Open current file as Gantt | `project-gantt:open-planner` |
+| Open beside the note | Open Gantt beside current note | `project-gantt:open-planner-beside` |
 
 Assign hotkeys in Obsidian's settings. Both commands are always available; if no Markdown file is active, the plugin displays a notice.
 
-The chart icon in the left ribbon opens the current file. Its tooltip is **Project Gantt — открыть текущий файл в Гантте**. Toggle its visibility from the ribbon's context menu. Right-click a Markdown file and choose **Открыть в Project Gantt** to open a chart beside it. The file-text action in the chart header returns to Markdown.
+The chart icon in the left ribbon opens the current file. Its tooltip is **Project Gantt**. Toggle its visibility from the ribbon's context menu. Right-click a Markdown file and choose **Open in Project Gantt** to open a chart beside it. The file-text action in the chart header returns to Markdown. The table above shows English command labels; Russian labels are available through the language setting.
 
 ## Markdown example
 
@@ -110,7 +114,7 @@ npm run smoke:obsidian
 - `smoke`: builds and tests the CommonJS bundle in headless Edge with a minimal Obsidian API host. Set `EDGE` to override the browser path; the debugging port is 9334.
 - `smoke:obsidian`: builds and runs installed desktop Obsidian in a separate profile with a temporary vault. This runner currently supports Windows and does not copy or modify your working profile or notes. Set `OBSIDIAN_BINARY` or `OBSIDIAN_ASAR` to override application discovery.
 
-The real Obsidian run passed 24 checks on version 1.15.0: commands, ribbon actions, saving, conflicts, multiple views, layout restoration, renaming, embeds, themes, deletion, and disabling/re-enabling the plugin. Results remain in `.test-runtime/obsidian-*/results.json`.
+The real Obsidian run passed 27 checks on version 1.15.0: commands, ribbon actions, saving, conflicts, multiple views, layout restoration, renaming, embeds, themes, deletion, disabling/re-enabling the plugin, language switching, preference persistence, and preservation of Markdown during language changes. Results remain in `.test-runtime/obsidian-*/results.json`.
 
 Pop-out windows, mobile devices, and extended use alongside arbitrary third-party plugins have not been verified. See [PLAN.md](PLAN.md) for the implementation plan and progress; that document is in Russian.
 
@@ -122,4 +126,4 @@ Personal and commercial use, modification, and free redistribution are permitted
 
 This is a source-available project with restrictions on paid distribution, not an OSI-approved open-source license. The full license text governs.
 
-<!-- docs-source: repository=https://gitea.bvn13.me/management/obsidian-project-planner-plugin.git; branch=feature/project-gantt; commit=25c71a8ee97c921623251954acb939d80ac769e7; tag=; path=README.md; dirty=true -->
+<!-- docs-source: repository=https://gitea.bvn13.me/management/obsidian-project-planner-plugin.git; branch=feature/project-gantt; commit=54bb180fc5feea5f95847bface1c9c145d6a4ac5; tag=; path=README.md; dirty=true -->

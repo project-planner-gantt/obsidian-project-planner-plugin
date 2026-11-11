@@ -1,13 +1,14 @@
 import { MarkdownView, TFile, type App } from "obsidian";
 import { StaleEditError } from "@project-planner/core/core/store";
 import type { DocumentStorage } from "@project-planner/core/core/document";
+import type { Translate } from "@project-planner/core/core/i18n";
 
 /** All paths are vault-relative. Never access the filesystem outside Obsidian. */
 export class ObsidianStorage implements DocumentStorage {
-  constructor(private app: App) {}
+  constructor(private app: App, private t: Translate = text => text) {}
   private file(path: string): TFile {
     const file = this.app.vault.getAbstractFileByPath(path);
-    if (!(file instanceof TFile)) throw new Error(`Файл не найден: ${path}`);
+    if (!(file instanceof TFile)) throw new Error(`${this.t("File not found")}: ${path}`);
     return file;
   }
   async readText(path: string): Promise<string> { return this.app.vault.read(this.file(path)); }

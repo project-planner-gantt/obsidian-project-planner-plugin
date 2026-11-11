@@ -25,7 +25,7 @@ class TFile {
 class MarkdownView { constructor(file, value) { this.file=file;this.editor={getValue:()=>value}; } }
 class EditableFileView {
   constructor(leaf) { this.leaf=leaf;this.app=leaf.app;this.contentEl=leaf.el.createEl('div');this.file=null; }
-  addAction() {}
+  addAction() { return document.createElement('button'); }
   getState() { return {file:this.file?.path}; }
   async setState(state) {
     if(this.file) await this.onUnloadFile(this.file);
@@ -35,6 +35,10 @@ class EditableFileView {
 }
 class Notice { constructor(text) { notices.push(text); } }
 class Plugin {
+  async loadData() { return null; }
+  async saveData(data) { this.data = data; }
+  addSettingTab() {}
+  removeCommand(id) { this.commands = this.commands.filter(command => command.id !== id); }
   commands=[]; registrations=[]; cleanups=[];
   constructor(app) { this.app=app; }
   register(callback) { this.cleanups.push(callback); }
@@ -90,7 +94,7 @@ const app={vault,metadataCache,workspace};
 window.host={app,files,texts,leaves,markdown,notices};
 window.require=name=>{
   if(name!=='obsidian') throw Error('Unexpected require '+name);
-  return {Plugin,EditableFileView,TFile,MarkdownView,Notice};
+  return {Plugin,EditableFileView,TFile,MarkdownView,Notice,setTooltip:(el,text)=>el.setAttribute('aria-label',text),getLanguage:()=> 'ru',PluginSettingTab:class {},Setting:class {}};
 };
 window.module={exports:{}};
 </script>
