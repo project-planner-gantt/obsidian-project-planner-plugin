@@ -1,12 +1,87 @@
-# Project Gantt для Obsidian
+# Project Gantt for Obsidian
 
-Плагин редактирует Markdown-проект как диаграмму Гантта, используя общий интерфейс и логику из `project-planner-core`. Документ открывается средствами Obsidian; собственного файлового меню и списка недавних проектов нет.
+Edit Markdown project plans as interactive Gantt charts inside Obsidian. Chart changes are saved directly to your notes.
 
-Текущая версия ориентирована на настольный Obsidian. HTML-экспорт доступен в отдельном приложении `project-planner-2`; в интерфейсе плагина он пока не подключён.
+Created by **bvn13**, using Svelte 5, SVAR Gantt, and the shared [Project Gantt core](https://gitea.bvn13.me/management/project-planner-core).
 
-## Сборка
+## Features
 
-Разместите этот репозиторий рядом с `project-planner-core`. Нужны Node.js и npm; диапазон Node.js для используемого Vitest — `^22.12.0 || ^24.0.0 || >=26.0.0`.
+- Edit task dates, progress, dependencies, and task details.
+- Reorder and nest tasks and groups, and filter by project stages.
+- Open a chart in the current tab or beside a Markdown note.
+- Launch from the command palette, left ribbon, or file context menu.
+- Resolve linked notes and embeds through Obsidian's metadata cache.
+- Keep multiple views open with independent layout and interface state.
+- Follow Obsidian's theme and detect stale edits before saving.
+
+Obsidian handles file navigation. The plugin has no separate file picker or recent-files list. HTML export is currently available in the separate desktop application, not in this plugin.
+
+## Compatibility
+
+This is a **desktop-only** plugin. Version 2.0.1 has been tested on Windows with Obsidian 1.15.0. The manifest declares 1.6.0 as the minimum version; compatibility with that older version has not been verified.
+
+The current interface and command labels are in Russian. This README is in English.
+
+## Manual installation
+
+1. Build the plugin as described below, or use a packaged build supplied by the author.
+2. Create `.obsidian/plugins/project-gantt/` inside your vault.
+3. Copy `main.js`, `manifest.json`, and `styles.css` from `dist/` into that folder.
+4. Reload Obsidian and enable **Project Gantt** under Community plugins.
+
+On Windows, `npm run package` creates `dist/project-gantt-2.0.1.zip`. Extract its three files into the plugin folder. Disable any earlier build using the ID `project-planner` first; the Markdown format is unchanged.
+
+## Open a project
+
+Open a Markdown project note, then select a command:
+
+| Action | Current interface label | Command ID |
+| --- | --- | --- |
+| Open in the current tab | Открыть текущий файл в Гантте | `project-gantt:open-planner` |
+| Open beside the note | Открыть Project Gantt рядом с заметкой | `project-gantt:open-planner-beside` |
+
+Assign hotkeys in Obsidian's settings. Both commands are always available; if no Markdown file is active, the plugin displays a notice.
+
+The chart icon in the left ribbon opens the current file. Its tooltip is **Project Gantt — открыть текущий файл в Гантте**. Toggle its visibility from the ribbon's context menu. Right-click a Markdown file and choose **Открыть в Project Gantt** to open a chart beside it. The file-text action in the chart header returns to Markdown.
+
+## Markdown example
+
+A project starts with a level-one heading. Subheadings define groups and checklist items define tasks:
+
+```markdown
+# My project
+
+## Development
+
+- [ ] First task ⏳ 2026-11-11 📅 2026-11-13 ^first
+- [ ] Release #milestone 📅 2026-11-16 ⛔ ^first ^release
+```
+
+Opening a project adds missing task block IDs (`^id`) to its Markdown. Chart edits modify the note directly. More examples are available in the core repository's `samples/` directory.
+
+## Saving and multiple views
+
+The storage adapter uses vault-relative paths, the Vault API, and `Vault.process` for atomic updates. Links resolve through the metadata cache.
+
+If an open Markdown editor contains unsaved changes, or a task dialog is based on an older document version, the chart edit is rejected with a notice. Let the editor save, then retry the action or reopen the dialog.
+
+Each view has its own store and interface state. Column widths are saved in the workspace layout. Disabling the plugin returns its documents to Markdown views; the original pane arrangement may change.
+
+Implementation: [storage adapter](src/storage.ts), [view lifecycle](src/view.ts), and [plugin entry point](src/main.ts).
+
+## Build from source
+
+Place this repository next to `project-planner-core`:
+
+```text
+workspace/
+  project-planner-core/
+  obsidian-project-planner-plugin/
+```
+
+Use Node.js and npm. The installed Vitest version supports Node.js `^22.12.0 || ^24.0.0 || >=26.0.0`; Node.js 24 satisfies this range.
+
+From the plugin directory:
 
 ```sh
 npm --prefix ../project-planner-core ci
@@ -17,47 +92,13 @@ npm test
 npm run build
 ```
 
-Сборка создаёт `dist/main.js`, `dist/styles.css` и `dist/manifest.json`. Шрифты включены в CSS, внешняя загрузка шрифтов не требуется. `npm run dev` пересобирает плагин при изменении исходников.
+The build produces `dist/main.js`, `dist/styles.css`, and `dist/manifest.json`. Fonts are bundled into CSS. `npm run dev` watches sources and rebuilds the plugin.
 
-На Windows команда `npm run package` дополнительно создаёт готовый архив `dist/project-gantt-2.0.1.zip` с тремя файлами плагина в корне архива. Его можно распаковать в `.obsidian/plugins/project-gantt/`.
+The dependency is currently `file:../project-planner-core`, so both repositories are required. Its package name remains `@project-planner/core` despite the Project Gantt product name.
 
-## Установка и использование
+Build definitions: [package.json](package.json) and [vite.config.ts](vite.config.ts).
 
-1. Создайте в хранилище Obsidian каталог `.obsidian/plugins/project-gantt/`.
-2. Скопируйте в него три файла из `dist/`.
-3. Перезагрузите плагины или Obsidian и включите **Project Gantt** в сторонних плагинах.
-4. Откройте Markdown-проект и выполните команду **Открыть текущий файл в Гантте** либо **Открыть Project Gantt рядом с заметкой**.
-
-Команда **Project Gantt: Открыть текущий файл в Гантте** зарегистрирована как глобальная команда с иконкой диаграммы. Её можно выбрать в меню быстрых команд и назначить ей горячую клавишу; открытый файл определяется при запуске команды. Если Markdown-файл не открыт, плагин показывает уведомление. ID команды остаётся `project-gantt:open-planner`.
-
-В левой вертикальной панели отдельно зарегистрирована кнопка с иконкой диаграммы и подписью **Project Gantt — открыть текущий файл в Гантте**. Её видимость можно переключать в контекстном меню вертикальной панели. Нажатие открывает текущий Markdown-файл в Гантте в той же вкладке. Кнопка добавлена в версии плагина `2.0.1`.
-
-В контекстном меню Markdown-файла есть действие **Открыть в Project Gantt**: оно создаёт соседнее представление. Кнопка в заголовке представления возвращает документ в Markdown. Плагин не перехватывает открытие всех `.md`: включение представления выполняется явно.
-
-Если установлена предварительная сборка с ID `project-planner`, сначала отключите её. Новая сборка использует ID и каталог `project-gantt`; формат Markdown не меняется. Каталоги репозиториев и внутреннее имя общего пакета `@project-planner/core` сохранены.
-
-Можно открыть существующий проект приложения или создать заметку:
-
-```markdown
-# Мой проект
-
-## Разработка
-
-- [ ] Первая задача ⏳ 2026-11-11 📅 2026-11-13 ^first
-- [ ] Выпуск #milestone 📅 2026-11-16 ⛔ ^first ^release
-```
-
-Изменения дат, прогресса, связей, карточек и порядка задач сохраняются в том же файле. Отсутствующие блоковые ID задач добавляются при открытии планировщика. Для обнаружения задач используется существующий формат приложения с заголовком проекта `#`.
-
-## Сохранение и несколько представлений
-
-Каждое представление получает собственный store и состояние интерфейса. Ссылки и встраивания разрешаются через `metadataCache`; запись выполняется через `Vault.process`. Если Markdown-редактор ещё содержит несохранённый текст или карточка открыта на устаревшей версии, изменение диаграммы отклоняется с уведомлением. После сохранения текста можно повторить действие или заново открыть карточку.
-
-Ширина колонок сохраняется в состоянии вкладки. Цвета диаграммы ограничены экземпляром, а элементы интерфейса используют цвета темы Obsidian. Отключение плагина возвращает его открытые документы в Markdown.
-
-Источник истины: `src/main.ts`, `src/view.ts`, `src/storage.ts`, `src/styles.css`, `manifest.json`.
-
-## Проверки
+## Verification
 
 ```sh
 npm test
@@ -65,18 +106,20 @@ npm run smoke
 npm run smoke:obsidian
 ```
 
-Unit-тесты проверяют адаптер хранения. `smoke` собирает плагин и запускает его CommonJS-сборку в headless Edge с минимальной имитацией Obsidian API: несколько документов, цвета, карточки, внешние изменения, конфликт версий, изменение размеров, темы, переименование и освобождение подписок. Для браузера используется переменная `EDGE` или стандартный путь Windows, порт отладки — `9334`.
+- `test`: storage adapter unit tests.
+- `smoke`: builds and tests the CommonJS bundle in headless Edge with a minimal Obsidian API host. Set `EDGE` to override the browser path; the debugging port is 9334.
+- `smoke:obsidian`: builds and runs installed desktop Obsidian in a separate profile with a temporary vault. This runner currently supports Windows and does not copy or modify your working profile or notes. Set `OBSIDIAN_BINARY` or `OBSIDIAN_ASAR` to override application discovery.
 
-`smoke:obsidian` запускает установленный настольный Obsidian в отдельном профиле и создаёт временное тестовое хранилище. Сейчас этот запуск поддерживает Windows. Рабочий профиль, настройки и заметки пользователя не копируются и не изменяются; из установленного приложения используется только исполняемый файл и пакет приложения `.asar`. Собранный плагин устанавливается только в тестовое хранилище. После проверки тестовый экземпляр закрывается, результаты остаются в `.test-runtime/obsidian-*/results.json`.
+The real Obsidian run passed 24 checks on version 1.15.0: commands, ribbon actions, saving, conflicts, multiple views, layout restoration, renaming, embeds, themes, deletion, and disabling/re-enabling the plugin. Results remain in `.test-runtime/obsidian-*/results.json`.
 
-Путь приложения определяется автоматически или задаётся через `OBSIDIAN_BINARY`; конкретный пакет приложения можно выбрать через `OBSIDIAN_ASAR`. Проверка отказоустойчива к фоновой работе окна и использует свободный локальный порт CDP. Перед выполнением операций сценарий сверяет путь профиля с созданным тестовым каталогом.
+Pop-out windows, mobile devices, and extended use alongside arbitrary third-party plugins have not been verified. See [PLAN.md](PLAN.md) for the implementation plan and progress; that document is in Russian.
 
-В Obsidian 1.15.0 пройдены 24 проверки: глобальная регистрация команды текущего файла, наличие кнопки в левой вертикальной панели и открытие файла её нажатием, загрузка, соседний Markdown-редактор, переключение представлений, сохранение в обе стороны, защита несохранённого текста и устаревших карточек, несколько представлений, ширина колонок, переименование, встраивания, тёмная тема, восстановление вкладок после перезагрузки, удаление файла, отключение и повторное включение плагина.
+## License
 
-При отключении Obsidian сначала удаляет зарегистрированные представления. Поэтому плагин заранее запоминает их документы и затем возвращает их в Markdown-вкладки. Исходное расположение панели при этом может измениться. Проверка жизненного цикла учитывает этот порядок и в браузерной имитации API.
+Copyright (c) 2026 bvn13. Distributed under the [Project Gantt No-Sale License 1.0](LICENSE).
 
-Отдельные окна Obsidian, мобильная версия и длительная работа с пользовательскими наборами других плагинов пока не подтверждены проверкой.
+Personal and commercial use, modification, and free redistribution are permitted. Selling copies or paid forks, paid software bundles containing the covered code, and paid hosted access require separate written permission from bvn13. Paid support, training, installation, and development services are permitted subject to the license conditions. Third-party components retain their own licenses.
 
-План и состояние реализации: [PLAN.md](PLAN.md).
+This is a source-available project with restrictions on paid distribution, not an OSI-approved open-source license. The full license text governs.
 
-<!-- docs-source: repository=https://gitea.bvn13.me/management/obsidian-project-planner-plugin.git; branch=master; commit=unavailable; tag=; path=README.md; dirty=true -->
+<!-- docs-source: repository=https://gitea.bvn13.me/management/obsidian-project-planner-plugin.git; branch=feature/project-gantt; commit=25c71a8ee97c921623251954acb939d80ac769e7; tag=; path=README.md; dirty=true -->
