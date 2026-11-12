@@ -46,7 +46,7 @@ Bundled libraries do not need to be installed separately in Obsidian. Exact vers
 
 ## Supported environment
 
-This is a **desktop-only** plugin. Version 2.0.2 has been tested on Windows with Obsidian 1.15.0. The minimum supported API version is 1.8.7, required for Obsidian's language API; that older application version has not been verified.
+This is a **desktop-only** plugin. Version 2.0.3 has been tested on Windows with Obsidian 1.15.0. The minimum supported API version is 1.8.7, required for Obsidian's language API; that older application version has not been verified.
 
 ## Language
 
@@ -61,7 +61,7 @@ The preference is saved using Obsidian's plugin data storage (`data.json` inside
 3. Copy `main.js`, `manifest.json`, and `styles.css` from `dist/` into that folder.
 4. Reload Obsidian and enable **Project Gantt** under Community plugins.
 
-On Windows, `npm run package` creates `dist/project-gantt-2.0.2.zip`. Extract its three files into the plugin folder. Disable any earlier build using the ID `project-planner` first; the Markdown format is unchanged.
+On Windows, `npm run package` creates `dist/project-gantt-2.0.3.zip`. Extract its three files into the plugin folder. Disable any earlier build using the ID `project-planner` first; the Markdown format is unchanged.
 
 ## Open a project
 
@@ -75,6 +75,32 @@ Open a Markdown project note, then select a command:
 Assign hotkeys in Obsidian's settings. Both commands are always available; if no Markdown file is active, the plugin displays a notice.
 
 The chart icon in the left ribbon opens the current file. Its tooltip is **Project Gantt**. Toggle its visibility from the ribbon's context menu. Right-click a Markdown file and choose **Open in Project Gantt** to open a chart beside it. The file-text action in the chart header returns to Markdown. The table above shows English command labels; Russian labels are available through the language setting.
+
+## Markdown editor commands
+
+These commands work **only in Obsidian's Markdown editor**, on the current line. Assign keyboard shortcuts in **Settings → Hotkeys**, searching for **Project Gantt**. No default shortcuts are assigned, and no Gantt toolbar buttons are added.
+
+| Command (English) | Command ID, after the `project-gantt:` prefix |
+| --- | --- |
+| New task (with dates) | `tasks-enhancer-new-task` |
+| New plan task (with dates) | `tasks-enhancer-new-plan-task` |
+| Start working on task | `tasks-enhancer-start-work` |
+| Add creation date | `tasks-enhancer-add-created-date` |
+| Add or postpone scheduled date | `tasks-enhancer-add-scheduled-date` |
+| Add or postpone due date | `tasks-enhancer-add-due-date` |
+| Cycle task priority | `tasks-enhancer-cycle-priority` |
+| Move task block up | `tasks-enhancer-move-block-up` |
+| Move task block down | `tasks-enhancer-move-block-down` |
+
+Creation converts the current text line or bullet into an unchecked task, preserving indentation. Existing unchecked tasks keep their dates. **Start working** adds a missing `🛫` date; **Add creation date** adds a missing `➕` date. Scheduled/due commands add today's date if absent, or advance the existing date by one day. Priority cycles through `🔺`, `⏫`, `🔼`, `🔽`, and `⏬`.
+
+In the plugin settings, configure the dates added to ordinary and planned tasks separately: `➕` creation, `⏳` scheduled, and `📅` due. All six options default to enabled and use today's date. Postponement can skip configurable weekend days; this is disabled by default, with Sunday/Saturday configured as weekends. These preferences are stored in plugin data alongside the language, not in project Markdown.
+
+Movement transfers the complete list block, including nested tasks and indented notes, without crossing headings. Plain bullets and numbered list items are supported, and ordered numbering stays with list positions. Commands edit the current editor buffer, including unsaved changes, without writing through the Vault API. Each change is one undo step; cursor position and a single-line selection follow the edit. Multi-cursor and multi-line selections are left unchanged. Date/priority commands leave completed, cancelled, and other non-open checkbox states unchanged.
+
+Command names follow the selected English/Russian language. Their short IDs match the old plugin, but the plugin prefix changed: reassign shortcuts previously bound to `obsidian-gantt-planner-plugin:`. No old hotkey settings are modified automatically.
+
+Implementation: [editor commands](src/editor-commands.ts), [task settings](src/task-settings.ts), and [settings tab](src/settings.ts).
 
 ## Markdown example
 
@@ -144,7 +170,7 @@ npm run smoke:obsidian
 - `smoke`: builds and tests the CommonJS bundle in headless Edge with a minimal Obsidian API host. Set `EDGE` to override the browser path; the debugging port is 9334.
 - `smoke:obsidian`: builds and runs installed desktop Obsidian in a separate profile with a temporary vault. This runner currently supports Windows and does not copy or modify your working profile or notes. Set `OBSIDIAN_BINARY` or `OBSIDIAN_ASAR` to override application discovery.
 
-The real Obsidian run passed 27 checks on version 1.15.0: commands, ribbon actions, saving, conflicts, multiple views, layout restoration, renaming, embeds, themes, deletion, disabling/re-enabling the plugin, language switching, preference persistence, and preservation of Markdown during language changes. Results remain in `.test-runtime/obsidian-*/results.json`.
+The real Obsidian run passed 35 checks on version 1.15.0: commands, ribbon actions, saving, conflicts, multiple views, layout restoration, renaming, embeds, themes, deletion, language switching, editor-only task commands, unsaved-buffer edits, cursor/selection preservation, undo/redo, and task-setting persistence. Results remain in `.test-runtime/obsidian-*/results.json`.
 
 Pop-out windows, mobile devices, and extended use alongside arbitrary third-party plugins have not been verified. See [PLAN.md](PLAN.md) for the implementation plan and progress; that document is in Russian.
 
@@ -156,4 +182,4 @@ Personal and commercial use, modification, and free redistribution are permitted
 
 This is a source-available project with restrictions on paid distribution, not an OSI-approved open-source license. The full license text governs.
 
-<!-- docs-source: repository=https://gitea.bvn13.me/management/obsidian-project-planner-plugin.git; branch=feature/project-gantt; commit=96db96ff47acd94965f975c1a4cd7f1551c0c86b; tag=; path=README.md; dirty=true -->
+<!-- docs-source: repository=https://gitea.bvn13.me/management/obsidian-project-planner-plugin.git; branch=feature/markdown-task-commands; commit=fa144a5e4e9235d9fc6eb17bb6849f4451c2941b; tag=; path=README.md; dirty=true -->

@@ -1,6 +1,8 @@
 import { Plugin, TFile, Notice, getLanguage, type WorkspaceLeaf } from "obsidian";
 import { languagePreference, resolveLanguage, translator, type LanguagePreference } from "@project-planner/core/core/i18n";
 import { GanttSettingsTab } from "./settings";
+import { taskSettings, type TaskSettings } from "./task-settings";
+import { EDITOR_COMMANDS, registerEditorCommands } from "./editor-commands";
 import { PlannerView, VIEW_TYPE } from "./view";
 import "@project-planner/core/fonts.css";
 import "@project-planner/core/styles.css";
@@ -13,17 +15,31 @@ export default class ProjectGanttPlugin extends Plugin {
   private savedSettings: Record<string, unknown> = {};
   private ribbon?: HTMLElement;
   private settingsTab!: GanttSettingsTab;
+  editorSettings = taskSettings({});
+  private settingsQueue: Promise<void> = Promise.resolve();
+  saveTaskSettings(patch: Partial<TaskSettings>): Promise<void> { return this.saveSettingsPatch(patch); }
+  private saveSettingsPatch(patch: Record<string, unknown>): Promise<void> {
+    const result = this.settingsQueue.then(async () => {
+      const next = { ...this.savedSettings, ...patch };
+      await this.saveData(next);
+      this.savedSettings = next;
+      this.editorSettings = taskSettings(next);
+    });
+    this.settingsQueue = result.catch(() => {});
+    return result;
+  }
   get language() { return resolveLanguage(this.preference, getLanguage()); }
   private text(value: string) { return translator(this.language)(value); }
   async setLanguage(preference: LanguagePreference): Promise<void> {
     const next = languagePreference(preference);
-    await this.saveData({ ...this.savedSettings, language: next });
-    this.savedSettings = { ...this.savedSettings, language: next };
+    await this.saveSettingsPatch({ language: next });
     this.preference = next;
     for (const beside of [false, true]) {
       this.removeCommand(beside ? "open-planner-beside" : "open-planner");
       this.addPlannerCommand(beside);
     }
+    for (const [id] of EDITOR_COMMANDS) this.removeCommand(id);
+    registerEditorCommands(this, this.language, () => this.editorSettings);
     await Promise.all(this.app.workspace.getLeavesOfType(VIEW_TYPE).map(leaf => (leaf.view as PlannerView).refreshLanguage()));
   }
   private addPlannerCommand(beside: boolean): void {
@@ -35,6 +51,8 @@ export default class ProjectGanttPlugin extends Plugin {
     const loaded = await this.loadData();
     this.savedSettings = loaded && typeof loaded === "object" && !Array.isArray(loaded) ? loaded : {};
     this.preference = languagePreference(this.savedSettings.language);
+    this.editorSettings = taskSettings(this.savedSettings);
+    registerEditorCommands(this, this.language, () => this.editorSettings);
     this.settingsTab = new GanttSettingsTab(this.app, this);
     this.addSettingTab(this.settingsTab);
     this.registerView(VIEW_TYPE, leaf => new PlannerView(leaf, () => this.language));

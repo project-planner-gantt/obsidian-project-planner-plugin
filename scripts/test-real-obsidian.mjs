@@ -219,6 +219,86 @@ try {
     await app.plugins.enablePluginAndSave('project-gantt');
   });
   check('language preference persists across plugin reload', await evaluate(() => app.plugins.plugins['project-gantt'].preference === 'en'));
+  check('all restored task commands are editor-only', await evaluate(() => {
+    const commands = Object.values(app.commands.commands).filter(c => c.id.startsWith('project-gantt:tasks-enhancer-'));
+    return commands.length === 9 && commands.every(c => typeof c.editorCheckCallback === 'function' && !c.callback && !c.hotkeys?.length);
+  }));
+  await evaluate(async () => {
+    const file = await app.vault.create('editor-commands.md', '# Editor commands\n');
+    const leaf = app.workspace.getLeaf('tab');
+    await leaf.openFile(file); app.workspace.setActiveLeaf(leaf, { focus: true });
+    const editor = leaf.view.editor; editor.focus();
+    window.editorCommandsTest = { leaf, file, editor };
+    editor.setValue('# Unsaved buffer\n\tBuy milk');
+    editor.setCursor({ line: 1, ch: 9 });
+    app.commands.executeCommandById('project-gantt:tasks-enhancer-new-task');
+  });
+  check('new-task command transforms unsaved Markdown and retains indentation/cursor', await evaluate(() => {
+    const editor = editorCommandsTest.editor;
+    const line = editor.getLine(1);
+    return line.startsWith('\t- [ ] Buy milk ') && line.includes('➕ ') && line.includes('⏳ ') && line.includes('📅 ') && editor.getCursor().ch === 15;
+  }));
+  check('one undo restores the original unsaved line; redo restores the entire task', await evaluate(() => {
+    const editor = editorCommandsTest.editor, task = editor.getValue();
+    editor.undo(); const restored = editor.getValue() === '# Unsaved buffer\n\tBuy milk';
+    editor.redo(); return restored && editor.getValue() === task;
+  }));
+  check('single-line selection is retained when text becomes a task', await evaluate(() => {
+    const editor = editorCommandsTest.editor;
+    editor.setValue('  Task text');
+    editor.setSelection({ line: 0, ch: 11 }, { line: 0, ch: 2 });
+    app.commands.executeCommandById('project-gantt:tasks-enhancer-new-task');
+    return editor.getSelection() === 'Task text' && editor.getCursor('anchor').ch === 17 && editor.getCursor('head').ch === 8;
+  }));
+  check('moving blocks preserves notes/children and undo boundaries between commands', await evaluate(() => {
+    const editor = editorCommandsTest.editor;
+    const source = '## Tasks\n- [ ] First\n- [ ] Second\n  Notes\n  - [ ] Child\n## Next';
+    const moved = '## Tasks\n- [ ] Second\n  Notes\n  - [ ] Child\n- [ ] First\n## Next';
+    editor.setValue(source); editor.setCursor({ line: 2, ch: 8 });
+    app.commands.executeCommandById('project-gantt:tasks-enhancer-move-block-up');
+    const up = editor.getValue() === moved && editor.getCursor().line === 1 && editor.getCursor().ch === 8;
+    app.commands.executeCommandById('project-gantt:tasks-enhancer-move-block-down');
+    const down = editor.getValue() === source;
+    editor.undo(); const undidDownOnly = editor.getValue() === moved;
+    editor.undo(); return up && down && undidDownOnly && editor.getValue() === source;
+  }));
+  check('date and priority commands preserve block IDs, existing dates and finished tasks', await evaluate(() => {
+    const editor = editorCommandsTest.editor;
+    editor.setValue('- [ ] Work 🛫 2026-01-01 📅 2026-11-13 ^work'); editor.setCursor({ line: 0, ch: 8 });
+    app.commands.executeCommandById('project-gantt:tasks-enhancer-start-work');
+    app.commands.executeCommandById('project-gantt:tasks-enhancer-cycle-priority');
+    app.commands.executeCommandById('project-gantt:tasks-enhancer-add-created-date');
+    app.commands.executeCommandById('project-gantt:tasks-enhancer-add-scheduled-date');
+    const value = editor.getValue();
+    editor.setValue('- [x] Done ^done'); editor.setCursor({ line: 0, ch: 8 });
+    app.commands.executeCommandById('project-gantt:tasks-enhancer-new-task');
+    return value.endsWith('^work') && value.includes('🛫 2026-01-01') && value.includes('🔺') && value.includes('➕ ') && value.includes('⏳ ') && editor.getValue() === '- [x] Done ^done';
+  }));
+  await evaluate(async () => {
+    await app.plugins.plugins['project-gantt'].saveTaskSettings({ isNeedToAddDueDateOnPlanTask: false, shiftDatesByWorkingDaysOnly: true });
+    await app.plugins.disablePluginAndSave('project-gantt');
+    await app.plugins.enablePluginAndSave('project-gantt');
+  });
+  check('task settings persist independently of language and apply to commands', await evaluate(() => {
+    const plugin = app.plugins.plugins['project-gantt'], editor = editorCommandsTest.editor;
+    editorCommandsTest.leaf.view.editor.focus();
+    editor.setValue('Plan'); editor.setCursor({ line: 0, ch: 4 });
+    app.commands.executeCommandById('project-gantt:tasks-enhancer-new-plan-task');
+    const plan = editor.getValue();
+    editor.setValue('- [ ] Work 📅 2026-11-13 ^work'); editor.setCursor({ line: 0, ch: 8 });
+    app.commands.executeCommandById('project-gantt:tasks-enhancer-add-due-date');
+    return plugin.preference === 'en' && !plugin.editorSettings.isNeedToAddDueDateOnPlanTask && plan.includes('➕ ') && !plan.includes('📅 ') && editor.getValue().includes('📅 2026-11-16 ^work');
+  }));
+  await evaluate(async () => {
+    await app.plugins.plugins['project-gantt'].open(app.vault.getAbstractFileByPath('demo-project.md'), true);
+  });
+  await waitFor(() => app.workspace.activeLeaf?.view.getViewType() === 'project-gantt-view', 'chart before editor-only check');
+  check('editor commands are unavailable in a Gantt view', await evaluate(() => {
+    const before = editorCommandsTest.editor.getValue();
+    const command = app.commands.commands['project-gantt:tasks-enhancer-new-task'];
+    app.commands.executeCommandById(command.id);
+    return !command.editorCheckCallback(true, editorCommandsTest.editor, editorCommandsTest.leaf.view) && editorCommandsTest.editor.getValue() === before;
+  }));
 } catch (error) {
   console.error(error); results.push({ name: 'unexpected error', passed: false, detail: String(error) }); failed++;
 } finally {
