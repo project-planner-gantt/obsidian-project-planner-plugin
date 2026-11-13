@@ -59,7 +59,7 @@ export class PlannerView extends EditableFileView {
     } catch (error) {
       store.close();
       if (revision !== this.revision) return;
-      const message = `${translator(this.language())("Failed to open project")}: ${error}`;
+      const message = `${translator(this.language())("Failed to open project")}: ${String(error)}`;
       new Notice(message);
       this.contentEl.createEl("p", { text: message });
     }

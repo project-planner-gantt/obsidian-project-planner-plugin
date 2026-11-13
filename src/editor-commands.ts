@@ -111,7 +111,7 @@ export function runEditorCommand(editor: Editor, id: EditorCommandId, settings: 
 export function registerEditorCommands(plugin: Plugin, language: Language, settings: () => TaskSettings): void {
   for (const [id, name] of EDITOR_COMMANDS) {
     plugin.addCommand({ id, name: editorText(language, name), editorCheckCallback: (checking, editor) => {
-      const view = plugin.app.workspace.activeLeaf?.view;
+      const view = plugin.app.workspace.getActiveViewOfType(MarkdownView);
       // Obsidian can retain the previous editor while a non-editor view is active.
       if (!(view instanceof MarkdownView) || view.editor !== editor) return false;
       if (!checking) runEditorCommand(editor, id, settings());

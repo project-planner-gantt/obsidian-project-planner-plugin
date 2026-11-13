@@ -1,6 +1,6 @@
 {
   "name": "obsidian-project-gantt-plugin",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,19 +10,23 @@
     "test": "vitest run",
     "smoke": "npm run build && node scripts/smoke-host.mjs",
     "smoke:obsidian": "npm run build && node scripts/smoke-obsidian.mjs",
-    "package": "npm run build && powershell.exe -NoProfile -File scripts/package.ps1"
+    "package": "npm run build && powershell.exe -NoProfile -File scripts/package.ps1",
+    "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
-    "@project-planner/core": "file:../project-planner-core",
+    "@project-planner/core": "file:vendor/project-planner-core-2.0.0.tgz",
     "svelte": "5.57.2"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "7.3.1",
     "@tsconfig/svelte": "5.0.8",
     "@types/node": "^24.0.0",
+    "eslint": "9.39.5",
+    "eslint-plugin-obsidianmd": "0.5.1",
     "obsidian": "1.14.4",
     "svelte-check": "4.7.7",
     "typescript": "5.9.3",
+    "typescript-eslint": "8.72.2",
     "vite": "8.3.4",
     "vitest": "5.0.5"
   },

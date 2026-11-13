@@ -8,6 +8,10 @@ import "@project-planner/core/fonts.css";
 import "@project-planner/core/styles.css";
 import "./styles.css";
 
+function isSettingsRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 export default class ProjectGanttPlugin extends Plugin {
   private documents: { leaf: WorkspaceLeaf; file: TFile }[] = [];
   private quitting = false;
@@ -48,8 +52,8 @@ export default class ProjectGanttPlugin extends Plugin {
       icon: "chart-gantt", callback: () => this.openCurrentFile(beside) });
   }
   async onload(): Promise<void> {
-    const loaded = await this.loadData();
-    this.savedSettings = loaded && typeof loaded === "object" && !Array.isArray(loaded) ? loaded : {};
+    const loaded: unknown = await this.loadData();
+    this.savedSettings = isSettingsRecord(loaded) ? loaded : {};
     this.preference = languagePreference(this.savedSettings.language);
     this.editorSettings = taskSettings(this.savedSettings);
     registerEditorCommands(this, this.language, () => this.editorSettings);
@@ -87,7 +91,7 @@ export default class ProjectGanttPlugin extends Plugin {
       const leaf = this.app.workspace.getLeaf(beside ? "split" : false);
       await leaf.setViewState({ type: VIEW_TYPE, state: { file: file.path }, active: true });
       await this.app.workspace.revealLeaf(leaf);
-    } catch (error) { new Notice(`${this.text("Failed to open planner")}: ${error}`); }
+    } catch (error) { new Notice(`${this.text("Failed to open planner")}: ${String(error)}`); }
   }
   onunload(): void {
     if (this.quitting) return;

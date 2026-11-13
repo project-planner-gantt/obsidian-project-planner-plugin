@@ -32,7 +32,7 @@ Obsidian handles file navigation. The plugin has no separate file picker or rece
 | --- | --- | --- |
 | Obsidian desktop | Required host application | Provides the workspace, vault access, Markdown views, and plugin settings. Minimum API version: 1.8.7; tested with Obsidian 1.15.0. |
 | [Obsidian Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) | **Optional companion plugin** | Project Gantt's task syntax is based on the Tasks emoji metadata format, including scheduled, start, due, and completion dates. Installing Tasks is optional: Project Gantt parses and edits Markdown itself and does not call the Tasks plugin API. |
-| `@project-planner/core` | Required; bundled into the plugin | Shared Markdown parser, editing operations, document store, localization, and Gantt editor. Built from the sibling core repository. |
+| `@project-planner/core` | Required; bundled into the plugin | Shared parser, document store, localization, and Gantt editor. Installed from a versioned archive committed under `vendor/`; its source commit and SHA-256 are recorded in `vendor/core-source.json`. |
 | Svelte 5 | Required; bundled | Component framework for the editor, dialogs, and reactive interface. |
 | SVAR Gantt and SVAR Core | Required; bundled through the core | Chart rendering, dependency visualization, calendar widgets, and widget localization. |
 | CodeMirror 6 and Lezer | Required; bundled through the core | Markdown editing and syntax highlighting in task and group notes. |
@@ -46,7 +46,7 @@ Bundled libraries do not need to be installed separately in Obsidian. Exact vers
 
 ## Supported environment
 
-This is a **desktop-only** plugin. Version 2.0.3 has been tested on Windows with Obsidian 1.15.0. The minimum supported API version is 1.8.7, required for Obsidian's language API; that older application version has not been verified.
+This is a **desktop-only** plugin. Version 2.0.4 has been tested on Windows with Obsidian 1.15.0. The minimum supported API version is 1.8.7, required for Obsidian's language API; that older application version has not been verified.
 
 ## Language
 
@@ -61,7 +61,7 @@ The preference is saved using Obsidian's plugin data storage (`data.json` inside
 3. Copy `main.js`, `manifest.json`, and `styles.css` from `dist/` into that folder.
 4. Reload Obsidian and enable **Project Gantt** under Community plugins.
 
-On Windows, `npm run package` creates `dist/project-gantt-2.0.3.zip`. Extract its three files into the plugin folder. Disable any earlier build using the ID `project-planner` first; the Markdown format is unchanged.
+On Windows, `npm run package` creates `packages/project-gantt-2.0.4.zip`. Extract its three files into the plugin folder. Disable any earlier build using the ID `project-planner` first; the Markdown format is unchanged.
 
 ## Open a project
 
@@ -129,30 +129,25 @@ Implementation: [storage adapter](src/storage.ts), [view lifecycle](src/view.ts)
 
 ## Build from source
 
-Place this repository next to `project-planner-core`:
-
-```text
-workspace/
-  project-planner-core/
-  obsidian-project-planner-plugin/
-```
+This repository builds independently. A sibling core checkout is not required: npm installs the exact archive committed in `vendor/`, including its source, declarations, and license.
 
 Use Node.js and npm. The installed Vitest version supports Node.js `^22.12.0 || ^24.0.0 || >=26.0.0`; Node.js 24 satisfies this range.
 
 From the plugin directory:
 
 ```sh
-npm --prefix ../project-planner-core ci
-npm --prefix ../project-planner-core run build
 npm ci
 npm run check
+npm run lint
 npm test
 npm run build
 ```
 
 The build produces `dist/main.js`, `dist/styles.css`, and `dist/manifest.json`. Fonts are bundled into CSS. `npm run dev` watches sources and rebuilds the plugin.
 
-The dependency is currently `file:../project-planner-core`, so both repositories are required. Its package name remains `@project-planner/core` despite the Project Gantt product name.
+The package name remains `@project-planner/core` despite the Project Gantt product name. To update the vendored core, build a clean checkout of `project-planner-core`, run `npm pack ../project-planner-core --pack-destination vendor`, install the resulting archive with `npm install ./vendor/<archive>.tgz`, and update `vendor/core-source.json` with the source commit and archive SHA-256. Commit the archive and lockfile together. The plugin's normal build does not download source from Gitea or require an npm-published core package.
+
+For a GitHub release, use a tag exactly matching `manifest.json` (currently `2.0.4`) and attach **only** `dist/main.js`, `dist/manifest.json`, and `dist/styles.css`. The ZIP in `packages/` is for manual installation and should not be attached to the catalog release. Artifact attestations are an optional GitHub Actions provenance feature; a local build does not create them.
 
 Build definitions: [package.json](package.json) and [vite.config.ts](vite.config.ts).
 
@@ -161,6 +156,7 @@ Build definitions: [package.json](package.json) and [vite.config.ts](vite.config
 To regenerate these screenshots on Windows using an isolated Obsidian profile, run `node scripts/smoke-obsidian.mjs --screenshots` after building the plugin. This runs the integration checks, captures the demo chart and task dialog, and updates the image files in this repository and the sibling core repository.
 
 ```sh
+npm run lint
 npm test
 npm run smoke
 npm run smoke:obsidian
@@ -182,4 +178,4 @@ Personal and commercial use, modification, and free redistribution are permitted
 
 This is a source-available project with restrictions on paid distribution, not an OSI-approved open-source license. The full license text governs.
 
-<!-- docs-source: repository=https://gitea.bvn13.me/management/obsidian-project-planner-plugin.git; branch=feature/markdown-task-commands; commit=fa144a5e4e9235d9fc6eb17bb6849f4451c2941b; tag=; path=README.md; dirty=true -->
+<!-- docs-source: repository=https://gitea.bvn13.me/management/obsidian-project-planner-plugin.git; branch=master; commit=cfa9e78ecfbb588bc31af16dd825ad64b7674fea; tag=; path=README.md; dirty=true -->

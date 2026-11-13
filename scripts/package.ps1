@@ -6,7 +6,9 @@ if ($manifest.version -ne $package.version -or $manifest.id -ne 'project-gantt')
     throw 'Built manifest does not match the plugin package'
 }
 $files = @('main.js', 'styles.css', 'manifest.json') | ForEach-Object { Join-Path $repoRoot "dist/$_" }
-$archive = Join-Path $repoRoot "dist/project-gantt-$($manifest.version).zip"
+$archiveDirectory = Join-Path $repoRoot 'packages'
+New-Item -ItemType Directory -Force -Path $archiveDirectory | Out-Null
+$archive = Join-Path $archiveDirectory "project-gantt-$($manifest.version).zip"
 Compress-Archive -LiteralPath $files -DestinationPath $archive -Force
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [IO.Compression.ZipFile]::OpenRead($archive)
