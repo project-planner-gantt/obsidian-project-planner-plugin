@@ -1,6 +1,6 @@
 {
   "name": "obsidian-project-gantt-plugin",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "private": true,
   "type": "module",
   "scripts": {
@@ -14,7 +14,7 @@
     "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
-    "@project-planner/core": "file:vendor/project-planner-core-2.0.0.tgz",
+    "@project-planner/core": "file:vendor/project-planner-core-2.0.1.tgz",
     "svelte": "5.57.2"
   },
   "devDependencies": {

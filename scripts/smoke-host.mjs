@@ -46,11 +46,24 @@ try {
   for(let i=0;i<60;i++) { if(await run(()=>typeof window.start==='function')) break; await sleep(100); }
   if(!await run(()=>typeof window.start==='function')) throw Error(`Fixture did not load: ${errors.join("\n")}`);
   if(errors.length) throw Error(errors.join("\n"));
-  await run(()=>window.start());await sleep(500);
+  await run(()=>{
+    host.texts.set('beta.md', host.texts.get('beta.md')
+      .replace('  todo: "#0000ff"', '  todo: "#0000ff"\n  critical: "#123456"')
+      + '\n- [ ] Critical #critical \u23f3 2026-11-10 ^critical'
+      + '\n- [ ] Blocked critical #blocked #critical \u23f3 2026-11-10 ^blocked-critical');
+    return window.start();
+  });await sleep(500);
   check("built CommonJS plugin mounts two document views",await run(()=>document.querySelectorAll('.pp-scope').length===2));
   check("plugin has no file dialogs, recent projects or HTML export",await run(()=>!document.querySelector('.pp-recent,.pp-export')&&![...document.querySelectorAll('.pp-toolbar button')].some(b=>b.textContent.includes('Открыть'))));
   const colors=await run(()=>[...document.querySelectorAll('.pp-scope')].map(root=>getComputedStyle(root.querySelector('.wx-bar[data-id=":a"]')).backgroundColor));
   check("per-project colors stay isolated with identical task IDs",colors[0]==='rgb(255, 0, 0)'&&colors[1]==='rgb(0, 0, 255)',JSON.stringify(colors));
+  check("critical task keeps its status fill and uses the configured outline",await run(()=>{
+    const root=document.querySelectorAll('.pp-scope')[1];
+    const normal=getComputedStyle(root.querySelector('.wx-bar[data-id=":critical"]'));
+    const blocked=getComputedStyle(root.querySelector('.wx-bar[data-id=":blocked-critical"]'));
+    return normal.backgroundColor==='rgb(0, 0, 255)' && blocked.backgroundColor==='rgb(232, 72, 85)'
+      && [normal,blocked].every(style=>style.outlineColor==='rgb(18, 52, 86)' && style.outlineStyle==='solid' && style.outlineWidth==='2px');
+  }));
   await run(()=>{
     const row=document.querySelectorAll('.pp-scope')[0].querySelector('.wx-row[data-id=":a"]');
     row.dispatchEvent(new MouseEvent('dblclick',{bubbles:true}));

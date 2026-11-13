@@ -46,7 +46,7 @@ Bundled libraries do not need to be installed separately in Obsidian. Exact vers
 
 ## Supported environment
 
-This is a **desktop-only** plugin. Version 2.0.4 has been tested on Windows with Obsidian 1.15.0. The minimum supported API version is 1.8.7, required for Obsidian's language API; that older application version has not been verified.
+This is a **desktop-only** plugin. Version 2.0.5 has been tested on Windows with Obsidian 1.15.0. The minimum supported API version is 1.8.7, required for Obsidian's language API; that older application version has not been verified.
 
 ## Language
 
@@ -61,7 +61,7 @@ The preference is saved using Obsidian's plugin data storage (`data.json` inside
 3. Copy `main.js`, `manifest.json`, and `styles.css` from `dist/` into that folder.
 4. Reload Obsidian and enable **Project Gantt** under Community plugins.
 
-On Windows, `npm run package` creates `packages/project-gantt-2.0.4.zip`. Extract its three files into the plugin folder. Disable any earlier build using the ID `project-planner` first; the Markdown format is unchanged.
+On Windows, `npm run package` creates `packages/project-gantt-2.0.5.zip`. Extract its three files into the plugin folder. Disable any earlier build using the ID `project-planner` first; the Markdown format is unchanged.
 
 ## Open a project
 
@@ -147,7 +147,7 @@ The build produces `dist/main.js`, `dist/styles.css`, and `dist/manifest.json`. 
 
 The package name remains `@project-planner/core` despite the Project Gantt product name. To update the vendored core, build a clean checkout of `project-planner-core`, run `npm pack ../project-planner-core --pack-destination vendor`, install the resulting archive with `npm install ./vendor/<archive>.tgz`, and update `vendor/core-source.json` with the source commit and archive SHA-256. Commit the archive and lockfile together. The plugin's normal build does not download source from Gitea or require an npm-published core package.
 
-For a GitHub release, use a tag exactly matching `manifest.json` (currently `2.0.4`) and attach **only** `dist/main.js`, `dist/manifest.json`, and `dist/styles.css`. The ZIP in `packages/` is for manual installation and should not be attached to the catalog release. Artifact attestations are an optional GitHub Actions provenance feature; a local build does not create them.
+For a GitHub release, use a tag exactly matching `manifest.json` (currently `2.0.5`) and attach **only** `dist/main.js`, `dist/manifest.json`, and `dist/styles.css`. The ZIP in `packages/` is for manual installation and should not be attached to the catalog release. Artifact attestations are an optional GitHub Actions provenance feature; a local build does not create them.
 
 Build definitions: [package.json](package.json) and [vite.config.ts](vite.config.ts).
 
