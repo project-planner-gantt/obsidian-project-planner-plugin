@@ -120,10 +120,20 @@ try {
   await run(async()=>{const file=host.files.get('alpha.md');host.files.delete(file.path);file.path='renamed.md';host.files.set(file.path,file);host.texts.set(file.path,host.texts.get('alpha.md'));for(const leaf of [host.leaves[0],host.leaves[2]])await leaf.view.onRename(file);});await sleep(100);
   check("renaming a document rebinds its store",await run(()=>[host.leaves[0],host.leaves[2]].every(l=>l.view.store.state.path==='renamed.md')));
   await run(async()=>{for(const leaf of host.leaves)if(leaf.view)await leaf.view.onClose();});
-  check("closing views removes document and metadata subscriptions",await run(()=>host.app.vault.refs.size===0&&host.app.metadataCache.refs.size===0));
+  check("closing views keeps only plugin-wide save subscriptions",await run(()=>host.app.vault.refs.size===2&&host.app.metadataCache.refs.size===0));
+  await run(()=>{
+    const file=host.files.get('renamed.md');
+    host.texts.set(file.path,'---\nis_planning: true\n---\n- [ ] Save task⏳ 2026-11-23 #stage-be 📅 2026-12-07\n');
+    host.app.vault.emit('modify',file);
+  });await sleep(150);
+  check("saving a planning note formats tags and adds an ID without a Gantt view",await run(()=>/Save task #stage-be ⏳ 2026-11-23 📅 2026-12-07 \^task-[\w-]+/.test(host.texts.get('renamed.md'))));
+  const formattedOnSave=await run(()=>host.texts.get('renamed.md'));
+  await run(()=>host.app.vault.emit('modify',host.files.get('renamed.md')));await sleep(100);
+  check("repeated save preserves the generated ID",await run(()=>host.texts.get('renamed.md'))===formattedOnSave);
   await run(async()=>{await host.plugin.open(host.files.get('renamed.md'),true);host.plugin.unload();});
   await sleep(100);
   check("plugin disable preserves documents after view-registration cleanup",await run(()=>host.app.workspace.getLeavesOfType('markdown').some(leaf=>leaf.view.file?.path==='renamed.md')&&host.app.workspace.getLeavesOfType('project-gantt-view').length===0));
+  check("plugin disable removes save subscriptions",await run(()=>host.app.vault.refs.size===0&&host.app.metadataCache.refs.size===0));
   check("no uncaught browser exceptions",errors.length===0,errors.join('\n'));
 }catch(error){console.error(error);failed++;}
 finally{ws?.close();browser.kill();server.close();}

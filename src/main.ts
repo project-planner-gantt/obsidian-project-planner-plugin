@@ -4,6 +4,8 @@ import { GanttSettingsTab } from "./settings";
 import { taskSettings, type TaskSettings } from "./task-settings";
 import { EDITOR_COMMANDS, registerEditorCommands } from "./editor-commands";
 import { PlannerView, VIEW_TYPE } from "./view";
+import { PlanningSaveFormatter } from "./planning-format";
+import { ObsidianStorage } from "./storage";
 import "@project-planner/core/fonts.css";
 import "@project-planner/core/styles.css";
 import "./styles.css";
@@ -56,6 +58,16 @@ export default class ProjectGanttPlugin extends Plugin {
     this.savedSettings = isSettingsRecord(loaded) ? loaded : {};
     this.preference = languagePreference(this.savedSettings.language);
     this.editorSettings = taskSettings(this.savedSettings);
+    const formatter = new PlanningSaveFormatter(new ObsidianStorage(this.app));
+    this.register(() => formatter.stop());
+    const formatSavedFile = (file: TFile) => {
+      void formatter.format(file).catch(error => {
+        console.error("Project Gantt: automatic formatting failed", file.path, error);
+        new Notice(`Project Gantt: automatic formatting failed (${file.path}): ${String(error)}`);
+      });
+    };
+    this.registerEvent(this.app.vault.on("modify", file => { if (file instanceof TFile) formatSavedFile(file); }));
+    this.registerEvent(this.app.vault.on("create", file => { if (file instanceof TFile) formatSavedFile(file); }));
     registerEditorCommands(this, this.language, () => this.editorSettings);
     this.settingsTab = new GanttSettingsTab(this.app, this);
     this.addSettingTab(this.settingsTab);
