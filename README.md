@@ -61,7 +61,7 @@ The preference is saved using Obsidian's plugin data storage (`data.json` inside
 3. Copy `main.js`, `manifest.json`, and `styles.css` from `dist/` into that folder.
 4. Reload Obsidian and enable **Project Gantt** under Community plugins.
 
-On Windows, `npm run package` creates `packages/project-gantt-2.0.5.zip`. Extract its three files into the plugin folder. Disable any earlier build using the ID `project-planner` first; the Markdown format is unchanged.
+On Windows, `npm run package` creates `packages/project-gantt-2.0.6.zip`. Extract its three files into the plugin folder. Disable any earlier build using the ID `project-planner` first; the Markdown format is unchanged.
 
 ## Open a project
 
@@ -115,7 +115,9 @@ A project starts with a level-one heading. Subheadings define groups and checkli
 - [ ] Release #milestone 📅 2026-11-16 ⛔ ^first ^release
 ```
 
-Opening a project adds missing task block IDs (`^id`) to its Markdown. Chart edits modify the note directly. More examples are available in the core repository's `samples/` directory.
+Opening or restoring a project adds missing task block IDs (`^id`) and moves task tags after the description, before date and other metadata fields. This normalization is saved to Markdown and leaves already formatted files unchanged. Chart edits modify the note directly. More examples are available in the core repository's `samples/` directory.
+
+To apply the same formatting whenever a Markdown note is saved, add `is_planning: true` (a YAML boolean) to its frontmatter. The plugin adds missing task IDs and places tags before metadata even when the Gantt view is closed. It also handles newly created notes, skips fenced code examples, and leaves notes without this flag unchanged. Unsaved editor changes are preserved; formatting waits for their next save.
 
 ## Saving and multiple views
 
@@ -147,7 +149,7 @@ The build produces `dist/main.js`, `dist/styles.css`, and `dist/manifest.json`. 
 
 The package name remains `@project-planner/core` despite the Project Gantt product name. To update the vendored core, build a clean checkout of `project-planner-core`, run `npm pack ../project-planner-core --pack-destination vendor`, install the resulting archive with `npm install ./vendor/<archive>.tgz`, and update `vendor/core-source.json` with the source commit and archive SHA-256. Commit the archive and lockfile together. The plugin's normal build does not download source from Gitea or require an npm-published core package.
 
-For a GitHub release, use a tag exactly matching `manifest.json` (currently `2.0.5`) and attach **only** `dist/main.js`, `dist/manifest.json`, and `dist/styles.css`. The ZIP in `packages/` is for manual installation and should not be attached to the catalog release. Artifact attestations are an optional GitHub Actions provenance feature; a local build does not create them.
+For a GitHub release, use a tag exactly matching `manifest.json` (currently `2.0.6`) and attach **only** `dist/main.js`, `dist/manifest.json`, and `dist/styles.css`. The ZIP in `packages/` is for manual installation and should not be attached to the catalog release. Artifact attestations are an optional GitHub Actions provenance feature; a local build does not create them.
 
 Build definitions: [package.json](package.json) and [vite.config.ts](vite.config.ts).
 

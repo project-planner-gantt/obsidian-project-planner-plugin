@@ -13,7 +13,7 @@ HTMLElement.prototype.createEl = function(tag, options={}) {
 };
 class Events {
   refs=new Set();
-  on(name,callback) { const ref={name,callback}; this.refs.add(ref); return ref; }
+  on(name,callback) { const ref={name,callback,owner:this}; this.refs.add(ref); return ref; }
   offref(ref) { this.refs.delete(ref); }
   emit(name,...args) { for(const ref of [...this.refs]) if(ref.name===name) ref.callback(...args); }
 }
@@ -51,7 +51,7 @@ class Plugin {
     const button=document.body.createEl('button'); button.hidden=true; button.setAttribute('aria-label',title);
     button.addEventListener('click',callback); this.register(()=>button.remove()); return button;
   }
-  registerEvent(ref) { this.registrations.push(ref); this.register(()=>workspace.offref(ref)); }
+  registerEvent(ref) { this.registrations.push(ref); this.register(()=>ref.owner.offref(ref)); }
   unload() { while(this.cleanups.length) this.cleanups.pop()(); this.onunload(); }
 }
 const files=new Map(['alpha.md','beta.md'].map(path=>[path,new TFile(path)]));
